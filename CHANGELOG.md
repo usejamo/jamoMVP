@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.0] - 2026-02-25
+
+### Changed
+- Converted project from JavaScript to TypeScript
+- Added strict TypeScript configuration
+- Added typed interfaces for nav items
+
 ## [0.1.0] - 2026-02-25
 
 ### Added

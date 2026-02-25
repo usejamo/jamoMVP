@@ -1,7 +1,13 @@
 import { NavLink } from 'react-router-dom'
 import jamoLogo from '../assets/jamo_logo.png'
 
-const navItems = [
+interface NavItem {
+  to: string
+  label: string
+  icon: React.FC
+}
+
+const navItems: NavItem[] = [
   { to: '/', label: 'Dashboard', icon: DashboardIcon },
 ]
 
@@ -29,7 +35,7 @@ export default function Sidebar() {
                   }`
                 }
               >
-                <item.icon active={false} />
+                <item.icon />
                 {item.label}
               </NavLink>
             </li>

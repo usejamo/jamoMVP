@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --color-jamo: #E8524A;
+  --color-jamo-dark: #C43E38;
+  --color-jamo-light: #F28B7D;
+  --color-jamo-50: #FEF2F1;
+  --color-jamo-100: #FDE6E4;
+  --color-jamo-200: #FBCCC8;
+  --color-jamo-300: #F7A9A2;
+  --color-jamo-400: #F28B7D;
+  --color-jamo-500: #E8524A;
+  --color-jamo-600: #D43E36;
+  --color-jamo-700: #C43E38;
+  --color-jamo-800: #9A3330;
+  --color-jamo-900: #7F302E;
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #F9FAFB;
+  color: #1F2937;
+}
+
+#root {
+  min-height: 100vh;
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import type { DraftSection, Segment, ContentBlock, Annotation, AnnotationSourceType } from '../types/draft'
 
 const SOURCE_META: Record<AnnotationSourceType, { dot: string; badge: string; badgeText: string; quoteBorder: string; label: string }> = {
@@ -170,8 +170,81 @@ interface Props {
   sections: DraftSection[]
 }
 
+function DraftNav({
+  sections,
+  activeId,
+}: {
+  sections: DraftSection[]
+  activeId: string
+}) {
+  function scrollTo(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
+  return (
+    <nav className="sticky top-8 self-start w-48 shrink-0 pr-6">
+      <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Contents</p>
+      <ul className="space-y-0.5">
+        {sections.map(section => {
+          const isActive = activeId === section.id
+          // Strip the "N. " number prefix for the nav label
+          const label = section.title.replace(/^\d+\.\s*/, '')
+          return (
+            <li key={section.id}>
+              <button
+                onClick={() => scrollTo(section.id)}
+                className={`w-full text-left text-xs px-2 py-1.5 rounded-md transition-colors leading-snug ${
+                  isActive
+                    ? 'bg-jamo-50 text-jamo-600 font-semibold'
+                    : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+                }`}
+              >
+                {label}
+              </button>
+              {section.subsections && isActive && (
+                <ul className="mt-0.5 mb-1 ml-2 space-y-0.5 border-l border-gray-100 pl-2">
+                  {section.subsections.map(sub => (
+                    <li key={sub.id}>
+                      <button
+                        onClick={() => scrollTo(sub.id)}
+                        className="w-full text-left text-xs px-2 py-1 rounded-md text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors leading-snug"
+                      >
+                        {sub.title.replace(/^\d+\.\d+\s*/, '')}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          )
+        })}
+      </ul>
+    </nav>
+  )
+}
+
 export default function ProposalDraftRenderer({ sections }: Props) {
   const [popover, setPopover] = useState<PopoverState | null>(null)
+  const [activeId, setActiveId] = useState(sections[0]?.id ?? '')
+
+  // Track which section heading is nearest the top of the viewport
+  useEffect(() => {
+    const ids = sections.map(s => s.id)
+    const observers: IntersectionObserver[] = []
+
+    ids.forEach(id => {
+      const el = document.getElementById(id)
+      if (!el) return
+      const observer = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActiveId(id) },
+        { rootMargin: '-10% 0px -80% 0px', threshold: 0 }
+      )
+      observer.observe(el)
+      observers.push(observer)
+    })
+
+    return () => observers.forEach(o => o.disconnect())
+  }, [sections])
 
   useEffect(() => {
     const close = () => setPopover(null)
@@ -179,16 +252,16 @@ export default function ProposalDraftRenderer({ sections }: Props) {
     return () => document.removeEventListener('click', close)
   }, [])
 
-  function handleAnnotationClick(e: React.MouseEvent<HTMLSpanElement>, annotation: Annotation) {
+  const handleAnnotationClick = useCallback((e: React.MouseEvent<HTMLSpanElement>, annotation: Annotation) => {
     e.stopPropagation()
     const anchorRect = (e.currentTarget as HTMLElement).getBoundingClientRect()
     setPopover({ annotation, anchorRect })
-  }
+  }, [])
 
   return (
     <div className="relative">
       {/* Legend */}
-      <div className="flex items-center gap-4 mb-5 pb-4 border-b border-gray-100">
+      <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-100">
         <span className="text-xs text-gray-400 font-medium">Source highlights:</span>
         {(['rfp', 'kickoff', 'other'] as AnnotationSourceType[]).map(type => (
           <span key={type} className="flex items-center gap-1.5 text-xs text-gray-600">
@@ -198,25 +271,32 @@ export default function ProposalDraftRenderer({ sections }: Props) {
         ))}
       </div>
 
-      {/* Sections */}
-      {sections.map(section => (
-        <div key={section.id} className="mb-8">
-          <h3 className="text-base font-bold text-gray-900 mb-3 pb-1 border-b border-gray-100">
-            {section.title}
-          </h3>
-          {section.blocks.map((block, i) => (
-            <RenderBlock key={i} block={block} onAnnotationClick={handleAnnotationClick} />
-          ))}
-          {section.subsections?.map(sub => (
-            <div key={sub.id} className="mt-4 ml-2">
-              <h4 className="text-sm font-semibold text-gray-800 mb-2">{sub.title}</h4>
-              {sub.blocks.map((block, i) => (
+      {/* Two-column: nav + content */}
+      <div className="flex gap-2">
+        <DraftNav sections={sections} activeId={activeId} />
+
+        {/* Draft content */}
+        <div className="flex-1 min-w-0">
+          {sections.map(section => (
+            <div key={section.id} id={section.id} className="mb-8 scroll-mt-4">
+              <h3 className="text-base font-bold text-gray-900 mb-3 pb-1 border-b border-gray-100">
+                {section.title}
+              </h3>
+              {section.blocks.map((block, i) => (
                 <RenderBlock key={i} block={block} onAnnotationClick={handleAnnotationClick} />
+              ))}
+              {section.subsections?.map(sub => (
+                <div key={sub.id} id={sub.id} className="mt-4 ml-2 scroll-mt-4">
+                  <h4 className="text-sm font-semibold text-gray-800 mb-2">{sub.title}</h4>
+                  {sub.blocks.map((block, i) => (
+                    <RenderBlock key={i} block={block} onAnnotationClick={handleAnnotationClick} />
+                  ))}
+                </div>
               ))}
             </div>
           ))}
         </div>
-      ))}
+      </div>
 
       {/* Popover */}
       {popover && (

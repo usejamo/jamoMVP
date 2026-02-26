@@ -27,3 +27,11 @@ export interface DraftSection {
   blocks: ContentBlock[]
   subsections?: DraftSubsection[]
 }
+
+export interface PendingSuggestion {
+  commandKey: string
+  targetId: string
+  explanation: string
+  suggestedPreview: string
+  status: 'pending' | 'accepted' | 'declined'
+}

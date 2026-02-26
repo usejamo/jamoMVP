@@ -1,10 +1,12 @@
 import { useParams, useNavigate } from 'react-router-dom'
-import { useState, useRef } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import proposals from '../data/proposals.json'
 import allDocuments from '../data/documents.json'
 import type { Proposal, ProposalStatus } from '../types/proposal'
+import type { PendingSuggestion } from '../types/draft'
 import { generateProposalDraft } from '../data/proposalDraftData'
 import ProposalDraftRenderer from '../components/ProposalDraftRenderer'
+import AIChatPanel from '../components/AIChatPanel'
 
 const allProposals = proposals as Proposal[]
 const docsByProposal = allDocuments as Record<string, MockDoc[]>
@@ -84,6 +86,8 @@ export default function ProposalDetail() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([])
   const [dragOver, setDragOver] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [pendingSuggestion, setPendingSuggestion] = useState<PendingSuggestion | null>(null)
+  const [lastResolution, setLastResolution] = useState<'accepted' | 'declined' | null>(null)
 
   const proposal = allProposals.find(p => p.id === id)
   const existingDocs: MockDoc[] = id ? (docsByProposal[id] ?? []) : []
@@ -121,18 +125,38 @@ export default function ProposalDetail() {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index))
   }
 
+  const handleSuggestionAccepted = useCallback(() => {
+    setPendingSuggestion(null)
+    setLastResolution('accepted')
+  }, [])
+
+  const handleSuggestionDeclined = useCallback(() => {
+    setPendingSuggestion(null)
+    setLastResolution('declined')
+  }, [])
+
+  const handleResolutionConsumed = useCallback(() => {
+    setLastResolution(null)
+  }, [])
+
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col" style={{ height: 'calc(100vh - 4rem)' }}>
       {/* Back */}
       <button
         onClick={() => navigate('/proposals')}
-        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors"
+        className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-800 transition-colors mb-4 shrink-0"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
         </svg>
         Back to Proposals
       </button>
+
+      {/* Two-pane */}
+      <div className="flex gap-5 flex-1 min-h-0">
+
+        {/* ── Left: scrollable content ── */}
+        <div className="flex-1 overflow-y-auto min-w-0 space-y-5 pr-1">
 
       {/* Header */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -336,10 +360,29 @@ export default function ProposalDetail() {
 
         {generated && (
           <div className="border border-gray-100 rounded-lg p-6 bg-white">
-            <ProposalDraftRenderer sections={draftSections} />
+            <ProposalDraftRenderer
+              sections={draftSections}
+              pendingSuggestion={pendingSuggestion}
+              onSuggestionAccepted={handleSuggestionAccepted}
+              onSuggestionDeclined={handleSuggestionDeclined}
+            />
           </div>
         )}
       </div>
+
+        </div>{/* end left pane */}
+
+        {/* ── Right: AI chat panel ── */}
+        <div className="w-[350px] shrink-0">
+          <AIChatPanel
+            draftGenerated={generated}
+            onCommand={setPendingSuggestion}
+            onSuggestionResolved={handleResolutionConsumed}
+            lastResolution={lastResolution}
+          />
+        </div>
+
+      </div>{/* end two-pane */}
     </div>
   )
 }

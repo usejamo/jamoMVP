@@ -47,3 +47,13 @@ body {
   background-size: 400% 400%;
   animation: jamo-aurora 3s ease infinite;
 }
+
+/* ── ROYGBIV spectrum pulse ── */
+@keyframes roygbiv-hue {
+  from { filter: hue-rotate(0deg); }
+  to   { filter: hue-rotate(360deg); }
+}
+
+.roygbiv-spin {
+  animation: roygbiv-hue 5s linear infinite;
+}

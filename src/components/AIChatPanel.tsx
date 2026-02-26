@@ -42,10 +42,38 @@ function PanelOpenIcon() {
 }
 
 function SparkleIcon({ className = 'w-4 h-4' }: { className?: string }) {
+  // viewBox shifted -3 on x-axis: the star's geometric center is at x=9 in the
+  // 24-unit coordinate space, not x=12. Shifting the viewBox left by 3 units
+  // makes the star appear optically centered in its container.
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <svg className={className} fill="none" viewBox="-3 0 24 24" stroke="currentColor" strokeWidth={2}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
     </svg>
+  )
+}
+
+// ── Spectrum sparkle button (ROYGBIV pulse) ───────────────────────────────────
+
+function SpectrumSparkle({ onToggle }: { onToggle: () => void }) {
+  return (
+    <motion.div
+      onClick={onToggle}
+      className="roygbiv-spin p-[1.5px] rounded-lg shrink-0 cursor-pointer"
+      style={{
+        background: 'linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00cc44, #0066ff, #4b0082, #8b00ff)',
+        boxShadow: '0 0 8px 2px rgba(255, 80, 80, 0.35)',
+      }}
+      whileHover={{
+        scale: 1.08,
+        boxShadow: '0 0 16px 5px rgba(255, 80, 80, 0.55)',
+      }}
+      whileTap={{ scale: 0.93 }}
+      transition={{ type: 'spring', stiffness: 400, damping: 20 }}
+    >
+      <div className="w-7 h-7 rounded-[6px] bg-white flex items-center justify-center">
+        <SparkleIcon className="w-3.5 h-3.5 text-red-500" />
+      </div>
+    </motion.div>
   )
 }
 
@@ -57,12 +85,7 @@ function AuroraBorder({ children, fast, className = '' }: {
   className?: string
 }) {
   return (
-    <div className={`relative rounded-2xl ${className}`}>
-      {/* Gradient border layer */}
-      <div
-        className={`absolute inset-0 rounded-2xl ${fast ? 'jamo-aurora-fast' : 'jamo-aurora'}`}
-        style={{ padding: '1.5px', WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)', WebkitMaskComposite: 'xor', maskComposite: 'exclude' }}
-      />
+    <div className={`p-[1.5px] rounded-2xl ${fast ? 'jamo-aurora-fast' : 'jamo-aurora'} ${className}`}>
       {children}
     </div>
   )
@@ -81,9 +104,7 @@ function Rail({ onExpand, processing }: { onExpand: () => void; processing: bool
         <PanelOpenIcon />
       </button>
 
-      <div className="w-7 h-7 rounded-lg bg-gray-900 flex items-center justify-center">
-        <SparkleIcon className="w-3.5 h-3.5 text-white" />
-      </div>
+      <SpectrumSparkle onToggle={onExpand} />
 
       {/* Pulsing dot shows AI is active */}
       <div className="mt-auto mb-2 flex flex-col items-center gap-1.5">
@@ -200,7 +221,7 @@ export default function AIChatPanel({ draftGenerated, onCommand, onSuggestionRes
     >
       <AuroraBorder fast={processing} className="h-full">
         {/* Glass inner panel */}
-        <div className="h-full rounded-2xl bg-white/92 backdrop-blur-md overflow-hidden flex flex-col"
+        <div className="h-full rounded-[14px] bg-white/92 backdrop-blur-md overflow-hidden flex flex-col"
           style={{ boxShadow: 'inset 0 0 0 0 transparent' }}
         >
           <AnimatePresence mode="wait" initial={false}>
@@ -226,9 +247,7 @@ export default function AIChatPanel({ draftGenerated, onCommand, onSuggestionRes
               >
                 {/* Header */}
                 <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-white/60 shrink-0">
-                  <div className="w-7 h-7 rounded-lg bg-gray-900 flex items-center justify-center shrink-0">
-                    <SparkleIcon className="w-3.5 h-3.5 text-white" />
-                  </div>
+                  <SpectrumSparkle onToggle={() => setExpanded(false)} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900 leading-none">jamo AI</p>
                     <p className="text-xs text-gray-400 mt-0.5">Proposal assistant</p>

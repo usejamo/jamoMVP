@@ -193,7 +193,7 @@ export default function ProposalDraftRenderer({ sections }: Props) {
         {(['rfp', 'kickoff', 'other'] as AnnotationSourceType[]).map(type => (
           <span key={type} className="flex items-center gap-1.5 text-xs text-gray-600">
             <span className={`inline-block w-3 h-3 rounded-sm ${HIGHLIGHT[type].split(' ')[0]}`} />
-            {SOURCE_STYLES[type].label}
+            {SOURCE_META[type].label}
           </span>
         ))}
       </div>

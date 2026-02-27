@@ -96,15 +96,28 @@ function getStats() {
 
 // ── Sub-components ───────────────────────────────────────────────────────────
 
-function StatCard({ label, value, sub, accent, weighted }: {
-  label: string; value: string; sub: string; accent: string; weighted?: string
+function StatCard({ label, value, sub, accent, weighted, source, weightedBadge }: {
+  label: string; value: string; sub: string; accent: string
+  weighted?: string; source?: string; weightedBadge?: string
 }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-6 flex flex-col gap-1">
       <span className={`text-xs font-semibold uppercase tracking-wide ${accent}`}>{label}</span>
       <span className="text-3xl font-bold text-gray-900">{value}</span>
       <span className="text-sm text-gray-500">{sub}</span>
-      {weighted && <span className="text-xs text-gray-400 font-medium mt-0.5">{weighted}</span>}
+      {source && (
+        <span className="text-[10px] text-gray-400 mt-0.5">{source}</span>
+      )}
+      {weighted && (
+        <div className="flex items-center gap-1.5 mt-0.5">
+          <span className="text-xs text-gray-400 font-medium">{weighted}</span>
+          {weightedBadge && (
+            <span className="text-[10px] text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded font-medium">
+              {weightedBadge}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   )
 }
@@ -170,7 +183,9 @@ export default function Dashboard() {
           value={formatCurrency(stats.pipeline)}
           sub="excl. lost proposals"
           accent="text-blue-600"
+          source="Data source: Salesforce Production Environment"
           weighted={`Weighted: ${formatCurrency(stats.weighted)}`}
+          weightedBadge="via Workday"
         />
       </div>
 

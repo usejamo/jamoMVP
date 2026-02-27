@@ -3,6 +3,7 @@ import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import ProposalsList from './pages/ProposalsList'
 import ProposalDetail from './pages/ProposalDetail'
+import Settings from './pages/Settings'
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/proposals" element={<ProposalsList />} />
           <Route path="/proposals/:id" element={<ProposalDetail />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

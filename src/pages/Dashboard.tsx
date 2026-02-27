@@ -1,15 +1,11 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import proposals from '../data/proposals.json'
 import type { Proposal, ProposalStatus } from '../types/proposal'
 
 const allProposals = proposals as Proposal[]
 
-// Fixed demo date for urgency calculations
 const DEMO_NOW = new Date('2026-02-26T12:00:00')
-
-// Weighted pipeline multiplier (matches the computed 67% win rate from data)
-const WIN_RATE = 0.67
+const WIN_RATE  = 0.67
 
 const PIPELINE_STAGES: { label: string; statuses: ProposalStatus[] }[] = [
   { label: 'RFP Received', statuses: ['draft'] },
@@ -35,49 +31,57 @@ const STATUS_COLORS: Record<ProposalStatus, string> = {
   lost:      'bg-red-100 text-red-600',
 }
 
-// Mock last-activity labels per proposal
+// Activity labels used for stale-activity urgency detection.
+// prop-003 and prop-006 deliberately set to ≥48h to yield exactly 4 urgent items.
 const LAST_ACTIVITY: Record<string, string> = {
   'prop-001': '3 days ago',
   'prop-002': '2h ago',
-  'prop-003': '1h ago',
-  'prop-004': 'Yesterday',
+  'prop-003': '2 days ago',
+  'prop-004': '3 days ago',
   'prop-005': '4 days ago',
-  'prop-006': 'Yesterday',
+  'prop-006': '3 days ago',
   'prop-007': '3h ago',
   'prop-008': '1 week ago',
   'prop-009': '2h ago',
   'prop-010': '5h ago',
 }
 
-// Dynamic TA filter tabs derived from data
-const TA_FILTERS = [
-  'All',
-  ...Array.from(new Set(allProposals.map(p => p.therapeuticArea))).sort(),
-]
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatCurrency(value: number) {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`
-  if (value >= 1_000)     return `$${(value / 1_000).toFixed(0)}K`
-  return `$${value}`
+function formatCurrency(v: number) {
+  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
+  if (v >= 1_000)     return `$${(v / 1_000).toFixed(0)}K`
+  return `$${v}`
 }
 
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric', year: 'numeric',
-  })
+function formatDate(s: string) {
+  return new Date(s).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function activityAgeHours(label: string): number {
+  if (!label) return 0
+  if (label.includes('week'))    return 168
+  if (label.includes('days ago') || label.includes('day ago')) return (parseInt(label) || 1) * 24
+  if (label === 'Yesterday')     return 24
+  if (label.includes('h ago'))   return parseInt(label) || 1
+  return 0
 }
 
 function getUrgencyTag(dueDate: string) {
-  const due    = new Date(dueDate)
-  const diffMs = due.getTime() - DEMO_NOW.getTime()
-  const diffH  = diffMs / 3_600_000
+  const diffH = (new Date(dueDate).getTime() - DEMO_NOW.getTime()) / 3_600_000
   if (diffH >= 0 && diffH <= 72) {
     const days = Math.ceil(diffH / 24)
     return { urgent: true, label: `Due in ${days} day${days !== 1 ? 's' : ''}` }
   }
   return { urgent: false, label: '' }
+}
+
+/** A proposal is urgent if it's active AND (due within 72h OR inactive ≥48h) */
+function isUrgent(p: Proposal): boolean {
+  if (p.status === 'won' || p.status === 'lost') return false
+  const diffH = (new Date(p.dueDate).getTime() - DEMO_NOW.getTime()) / 3_600_000
+  if (diffH >= 0 && diffH <= 72) return true
+  return activityAgeHours(LAST_ACTIVITY[p.id] ?? '') >= 48
 }
 
 function getStats() {
@@ -109,26 +113,17 @@ function StatCard({ label, value, sub, accent, weighted }: {
 
 export default function Dashboard() {
   const navigate = useNavigate()
-  const stats = getStats()
-
-  const [taFilter,     setTaFilter]     = useState('All')
-  const [statusFilter, setStatusFilter] = useState<ProposalStatus | null>(null)
+  const stats    = getStats()
 
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
   })
 
-  const filtered = allProposals
-    .filter(p => taFilter === 'All' || p.therapeuticArea === taFilter)
-    .filter(p => !statusFilter || p.status === statusFilter)
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-
-  const filtersActive = taFilter !== 'All' || statusFilter !== null
-
-  function toggleStatusFilter(statuses: ProposalStatus[]) {
-    const s = statuses[0]
-    setStatusFilter(prev => (prev === s ? null : s))
-  }
+  // Priority Focus: urgent proposals sorted by due date, capped at 4
+  const priorityItems = allProposals
+    .filter(isUrgent)
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
+    .slice(0, 4)
 
   return (
     <div className="space-y-6">
@@ -147,12 +142,12 @@ export default function Dashboard() {
         </button>
       </div>
 
-      {/* ── jamo Pulse ── */}
+      {/* ── jamo Pulse — triage summary ── */}
       <div className="bg-purple-50/50 border border-purple-100 rounded-xl px-5 py-3.5">
         <span className="text-[10px] font-bold text-purple-400 uppercase tracking-widest">jamo Pulse</span>
         <p className="text-sm text-gray-700 mt-1">
           <span className="font-semibold text-gray-800">jamo Insight:</span>{' '}
-          You have 3 proposals due this week. 'Rare Disease' needs 15% more source context for benchmark compliance.
+          4 proposals require immediate attention — 1 is due within 72 hours and 3 have shown no activity in over 48 hours.
         </p>
       </div>
 
@@ -182,21 +177,12 @@ export default function Dashboard() {
       {/* ── Main content ── */}
       <div className="grid grid-cols-3 gap-6">
 
-        {/* Recent Proposals */}
+        {/* Priority Focus */}
         <div className="col-span-2 bg-white rounded-xl border border-gray-200">
-
-          {/* Card header */}
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <h2 className="font-semibold text-gray-900">Recent Proposals</h2>
-              {filtersActive && (
-                <button
-                  onClick={() => { setTaFilter('All'); setStatusFilter(null) }}
-                  className="text-xs text-gray-400 hover:text-gray-600 underline underline-offset-2 transition-colors"
-                >
-                  Clear filter
-                </button>
-              )}
+            <div>
+              <h2 className="font-semibold text-gray-900">Priority Focus</h2>
+              <p className="text-xs text-gray-400 mt-0.5">Due within 72 h or inactive ≥ 48 h</p>
             </div>
             <button
               onClick={() => navigate('/proposals')}
@@ -204,26 +190,6 @@ export default function Dashboard() {
             >
               View all
             </button>
-          </div>
-
-          {/* TA filter chips */}
-          <div className="px-6 py-2.5 flex items-center gap-1.5 flex-wrap border-b border-gray-50">
-            {TA_FILTERS.map(ta => {
-              const isActive = taFilter === ta
-              return (
-                <button
-                  key={ta}
-                  onClick={() => setTaFilter(ta)}
-                  className={`text-xs px-2.5 py-1 rounded-md border transition-colors ${
-                    isActive
-                      ? 'bg-jamo-50 text-jamo-600 border-jamo-200 font-semibold'
-                      : 'text-gray-500 border-gray-200 hover:text-gray-700'
-                  }`}
-                >
-                  {ta}
-                </button>
-              )
-            })}
           </div>
 
           {/* Column headers */}
@@ -234,14 +200,11 @@ export default function Dashboard() {
             <span className="text-right">Status</span>
           </div>
 
-          {/* Rows */}
           <div className="divide-y divide-gray-50">
-            {filtered.length === 0 && (
-              <p className="px-6 py-8 text-sm text-gray-400 text-center">
-                No proposals match the current filter.
-              </p>
+            {priorityItems.length === 0 && (
+              <p className="px-6 py-8 text-sm text-gray-400 text-center">No urgent proposals at this time.</p>
             )}
-            {filtered.map(p => {
+            {priorityItems.map(p => {
               const urgency = getUrgencyTag(p.dueDate)
               return (
                 <div
@@ -250,24 +213,17 @@ export default function Dashboard() {
                   className="group px-6 py-3.5 hover:bg-gray-50 transition-colors cursor-pointer"
                 >
                   <div className="grid grid-cols-[1fr_5.5rem_4rem_9rem] gap-3 items-center">
-
-                    {/* Title + meta */}
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">{p.title}</p>
                       <p className="text-xs text-gray-500 mt-0.5">{p.client} · {p.therapeuticArea}</p>
                     </div>
-
-                    {/* Last Activity */}
                     <span className="text-right text-xs text-gray-400">
                       {LAST_ACTIVITY[p.id] ?? '—'}
                     </span>
-
-                    {/* Value */}
                     <span className="text-right text-sm font-medium text-gray-700">
                       {formatCurrency(p.value)}
                     </span>
-
-                    {/* Status badge ↔ hover actions */}
+                    {/* Status ↔ hover actions */}
                     <div className="relative flex justify-end">
                       <span className={`text-xs font-medium px-2 py-0.5 rounded-full transition-opacity group-hover:opacity-0 ${STATUS_COLORS[p.status]}`}>
                         {STATUS_LABELS[p.status]}
@@ -285,7 +241,6 @@ export default function Dashboard() {
                       </div>
                     </div>
                   </div>
-
                   {/* Due date / urgency */}
                   <div className="mt-1">
                     {urgency.urgent ? (
@@ -302,41 +257,27 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Pipeline ── */}
+        {/* Pipeline — informational, no filter sync on dashboard */}
         <div className="bg-white rounded-xl border border-gray-200">
           <div className="px-6 py-4 border-b border-gray-100">
             <h2 className="font-semibold text-gray-900">Pipeline</h2>
-            <p className="text-xs text-gray-400 mt-0.5">Click a stage to filter</p>
+            <p className="text-xs text-gray-400 mt-0.5">Stage breakdown</p>
           </div>
-
           <div className="p-6 space-y-4">
             {PIPELINE_STAGES.map(stage => {
               const count = allProposals.filter(p => stage.statuses.includes(p.status)).length
               const value = allProposals
                 .filter(p => stage.statuses.includes(p.status))
                 .reduce((sum, p) => sum + p.value, 0)
-              const pct      = Math.round((count / allProposals.length) * 100)
-              const isActive = statusFilter !== null && stage.statuses.includes(statusFilter)
-
+              const pct = Math.round((count / allProposals.length) * 100)
               return (
-                <div
-                  key={stage.label}
-                  onClick={() => toggleStatusFilter(stage.statuses)}
-                  className={`-mx-2 px-2 py-1.5 rounded-lg cursor-pointer transition-colors ${
-                    isActive ? 'bg-jamo-50' : 'hover:bg-gray-50'
-                  }`}
-                >
+                <div key={stage.label}>
                   <div className="flex justify-between mb-1.5">
-                    <span className={`text-sm font-medium ${isActive ? 'text-jamo-600' : 'text-gray-700'}`}>
-                      {stage.label}
-                    </span>
+                    <span className="text-sm font-medium text-gray-700">{stage.label}</span>
                     <span className="text-xs text-gray-500">{count} · {formatCurrency(value)}</span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-colors ${isActive ? 'bg-jamo-500' : 'bg-jamo-400'}`}
-                      style={{ width: `${pct}%` }}
-                    />
+                    <div className="h-full bg-jamo-400 rounded-full" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
               )

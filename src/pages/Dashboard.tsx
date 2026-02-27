@@ -186,7 +186,7 @@ export default function Dashboard() {
             </div>
             <button
               onClick={() => navigate('/proposals')}
-              className="text-sm text-jamo-500 hover:text-jamo-600 font-medium"
+              className="inline-flex items-center text-sm text-jamo-500 hover:text-jamo-600 font-medium px-3 py-1.5 rounded-lg transition-colors"
             >
               View all
             </button>

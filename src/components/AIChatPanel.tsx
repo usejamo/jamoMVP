@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DEMO_COMMANDS, matchCommand } from '../data/demoCommands'
+import jamoIcon from '../assets/jamo_icon.png'
 import type { PendingSuggestion } from '../types/draft'
 
 interface ChatMessage {
@@ -20,7 +21,7 @@ interface Props {
 const GREETING: ChatMessage = {
   id: 'greeting',
   role: 'assistant',
-  content: "Hi — I'm jamo AI. I can help you refine this proposal. Try one of the quick edits below, or type your own instruction.",
+  content: "Hi — I'm Jamo AI. I can help you refine this proposal. Try one of the quick edits below, or type your own instruction.",
 }
 
 // ── Icons ────────────────────────────────────────────────────────────────────
@@ -33,39 +34,18 @@ function PanelCloseIcon() {
   )
 }
 
+// ── Jamo icon button ─────────────────────────────────────────────────────────
 
-function SparkleIcon({ className = 'w-4 h-4' }: { className?: string }) {
-  // viewBox shifted -3 on x-axis: the star's geometric center is at x=9 in the
-  // 24-unit coordinate space, not x=12. Shifting the viewBox left by 3 units
-  // makes the star appear optically centered in its container.
-  return (
-    <svg className={className} fill="none" viewBox="-3 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09Z" />
-    </svg>
-  )
-}
-
-// ── Spectrum sparkle button (ROYGBIV pulse) ───────────────────────────────────
-
-function SpectrumSparkle({ onToggle }: { onToggle: () => void }) {
+function JamoIconButton({ onClick }: { onClick: () => void }) {
   return (
     <motion.div
-      onClick={onToggle}
-      className="roygbiv-spin p-[1.5px] rounded-lg shrink-0 cursor-pointer"
-      style={{
-        background: 'linear-gradient(135deg, #ff0000, #ff7f00, #ffff00, #00cc44, #0066ff, #4b0082, #8b00ff)',
-        boxShadow: '0 0 8px 2px rgba(255, 80, 80, 0.35)',
-      }}
-      whileHover={{
-        scale: 1.08,
-        boxShadow: '0 0 16px 5px rgba(255, 80, 80, 0.55)',
-      }}
+      onClick={onClick}
+      className="shrink-0 cursor-pointer"
+      whileHover={{ scale: 1.08 }}
       whileTap={{ scale: 0.93 }}
       transition={{ type: 'spring', stiffness: 400, damping: 20 }}
     >
-      <div className="w-7 h-7 rounded-[6px] bg-white flex items-center justify-center">
-        <SparkleIcon className="w-3.5 h-3.5 text-red-500" />
-      </div>
+      <img src={jamoIcon} alt="Jamo AI" className="w-7 h-7 rounded-md object-contain" />
     </motion.div>
   )
 }
@@ -95,7 +75,7 @@ function Rail({ onExpand, processing }: { onExpand: () => void; processing: bool
       title="Open jamo AI (⌘J)"
       className="flex flex-col items-center h-full pt-4 pb-3 gap-3 cursor-pointer hover:bg-black/[0.03] transition-colors"
     >
-      <SpectrumSparkle onToggle={onExpand} />
+      <JamoIconButton onClick={onExpand} />
 
       {/* Pulsing dot + label */}
       <div className="mt-auto mb-2 flex flex-col items-center gap-1.5">
@@ -105,7 +85,7 @@ function Rail({ onExpand, processing }: { onExpand: () => void; processing: bool
           transition={{ duration: processing ? 0.8 : 2.5, repeat: Infinity, ease: 'easeInOut' }}
         />
         <span className="text-[9px] text-gray-400 font-medium tracking-wide" style={{ writingMode: 'vertical-rl', transform: 'rotate(180deg)' }}>
-          jamo AI
+          Jamo AI
         </span>
       </div>
     </div>
@@ -238,9 +218,9 @@ export default function AIChatPanel({ draftGenerated, onCommand, onSuggestionRes
               >
                 {/* Header */}
                 <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-white/60 shrink-0">
-                  <SpectrumSparkle onToggle={() => setExpanded(false)} />
+                  <JamoIconButton onClick={() => setExpanded(false)} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-gray-900 leading-none">jamo AI</p>
+                    <p className="text-sm font-semibold text-gray-900 leading-none">Jamo AI</p>
                     <p className="text-xs text-gray-400 mt-0.5">Proposal assistant</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
@@ -337,7 +317,6 @@ export default function AIChatPanel({ draftGenerated, onCommand, onSuggestionRes
                       </svg>
                     </button>
                   </div>
-                  <p className="text-center text-[10px] text-gray-300 mt-1.5">⌘J to toggle panel</p>
                 </div>
               </motion.div>
             )}

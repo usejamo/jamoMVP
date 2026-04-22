@@ -1,19 +1,19 @@
 @import "tailwindcss";
 
 @theme {
-  --color-jamo: #E8524A;
-  --color-jamo-dark: #C43E38;
-  --color-jamo-light: #F28B7D;
-  --color-jamo-50: #FEF2F1;
-  --color-jamo-100: #FDE6E4;
-  --color-jamo-200: #FBCCC8;
-  --color-jamo-300: #F7A9A2;
-  --color-jamo-400: #F28B7D;
-  --color-jamo-500: #E8524A;
-  --color-jamo-600: #D43E36;
-  --color-jamo-700: #C43E38;
-  --color-jamo-800: #9A3330;
-  --color-jamo-900: #7F302E;
+  --color-jamo: #7924B2;
+  --color-jamo-dark: #5E1B8E;
+  --color-jamo-light: #A855D6;
+  --color-jamo-50: #FAF5FF;
+  --color-jamo-100: #F3E8FF;
+  --color-jamo-200: #E9D5FF;
+  --color-jamo-300: #D8B4FE;
+  --color-jamo-400: #C084FC;
+  --color-jamo-500: #A855D6;
+  --color-jamo-600: #7924B2;
+  --color-jamo-700: #5E1B8E;
+  --color-jamo-800: #4C1675;
+  --color-jamo-900: #3B1160;
 
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 }

@@ -15,7 +15,7 @@ const navItems: NavItem[] = [
 export default function Sidebar() {
   return (
     <aside className="w-64 shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen z-30">
-      <div className="px-4 py-3 border-b border-gray-200 shrink-0 flex items-center">
+      <div className="px-1 py-3 border-b border-gray-200 shrink-0 flex items-center">
         <img src={jamoLogo} alt="jamo" className="h-24 object-contain object-left" />
       </div>
 

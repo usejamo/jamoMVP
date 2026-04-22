@@ -41,11 +41,8 @@ export default function ProposalContentsSidebar({ sections, generated }: Props) 
     <aside className="w-64 shrink-0 bg-white border-r border-gray-200 flex flex-col h-screen z-30">
 
       {/* Brand */}
-      <div className="p-6 border-b border-gray-200 shrink-0">
-        <div className="flex items-center gap-3">
-          <img src={jamoLogo} alt="jamo" className="h-10 w-10" />
-          <span className="text-xl font-bold text-gray-900">jamo</span>
-        </div>
+      <div className="px-1 py-3 border-b border-gray-200 shrink-0 flex items-center">
+        <img src={jamoLogo} alt="jamo" className="h-24 object-contain object-left" />
       </div>
 
       {/* Section nav */}
